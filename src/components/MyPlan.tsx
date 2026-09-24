@@ -2,10 +2,26 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function MyPlan() {
   const [activeTab, setActiveTab] = useState<"plan" | "saved">("plan");
   const [workouts, setWorkouts] = useState<any[]>([]);
+  const [completedWorkouts, setCompletedWorkouts] = useState<(string | number)[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState("duration");
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+
+    if (tab === "saved") {
+      setActiveTab("saved");
+    } else {
+      setActiveTab("plan");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const loadWorkouts = () => {
@@ -41,6 +57,26 @@ export default function MyPlan() {
     };
   }, [activeTab]);
 
+  const showToast = (message: string) => {
+    setToastMessage(message);
+
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
+  const handleMarkAsDone = (id: string | number) => {
+    setCompletedWorkouts((previous) => {
+      if (previous.some((item) => String(item) === String(id))) {
+        return previous;
+      }
+
+      return [...previous, id];
+    });
+
+    showToast("Workout marked as done!");
+  };
+
   const handleRemove = (id: string | number) => {
     const storageKey =
       activeTab === "plan" ? "fitlog_plan" : "fitlog_saved";
@@ -68,6 +104,22 @@ export default function MyPlan() {
     }
   };
 
+  const sortedWorkouts = [...workouts].sort((a, b) => {
+    if (sortBy === "duration") {
+      return Number(b.duration) - Number(a.duration);
+    }
+
+    if (sortBy === "rating") {
+      return Number(b.rating) - Number(a.rating);
+    }
+
+    if (sortBy === "calories") {
+      return Number(b.caloriesBurned) - Number(a.caloriesBurned);
+    }
+
+    return 0;
+  });
+
   const totalExercises = workouts.length;
 
   const totalMinutes = workouts.reduce(
@@ -82,6 +134,12 @@ export default function MyPlan() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 text-white">
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#ccff00] text-black font-extrabold px-6 py-3 rounded-xl shadow-lg uppercase text-xs tracking-wider animate-bounce">
+          {toastMessage}
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-3xl font-black uppercase tracking-wider">
           MY PLAN
@@ -124,28 +182,52 @@ export default function MyPlan() {
         </div>
       </div>
 
-      <div className="flex gap-2 bg-[#16181d] p-1 rounded-xl border border-zinc-800 w-fit mb-6">
-      <button
-  onClick={() => setActiveTab("plan")}
-  className={`px-5 py-2 rounded-lg text-xs font-bold transition ${
-    activeTab === "plan"
-      ? "bg-[#ccff00] text-black"
-      : "text-zinc-400 hover:text-white"
-  }`}
->
-  Today's Plan
-</button>
+      <div className="flex items-end justify-between mb-6">
+        <div className="flex gap-2 bg-[#16181d] p-1 rounded-xl border border-zinc-800 w-fit">
+          <button
+            onClick={() => {
+              setActiveTab("plan");
+              window.history.pushState({}, "", "/my-plan?tab=plan");
+            }}
+            className={`px-5 py-2 rounded-lg text-xs font-bold transition ${
+              activeTab === "plan"
+                ? "bg-[#ccff00] text-black"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Today's Plan
+          </button>
 
-<button
-  onClick={() => setActiveTab("saved")}
-  className={`px-5 py-2 rounded-lg text-xs font-bold transition ${
-    activeTab === "saved"
-      ? "bg-[#ccff00] text-black"
-      : "text-zinc-400 hover:text-white"
-  }`}
->
-  Saved
-</button>
+          <button
+            onClick={() => {
+              setActiveTab("saved");
+              window.history.pushState({}, "", "/my-plan?tab=saved");
+            }}
+            className={`px-5 py-2 rounded-lg text-xs font-bold transition ${
+              activeTab === "saved"
+                ? "bg-[#ccff00] text-black"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Saved
+          </button>
+        </div>
+
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">
+            Sort By
+          </span>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-[#16181d] border border-zinc-800 text-white text-sm font-bold px-5 py-3 rounded-xl outline-none cursor-pointer min-w-[150px]"
+          >
+            <option value="duration">Duration</option>
+            <option value="rating">Rating</option>
+            <option value="calories">Calories</option>
+          </select>
+        </div>
       </div>
 
       {workouts.length === 0 ? (
@@ -167,60 +249,69 @@ export default function MyPlan() {
         </div>
       ) : (
         <div className="space-y-4">
-          {workouts.map((workout, index) => (
-            <div
-              key={`${workout.id}-${index}`}
-              className="bg-[#16181d] border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-4 w-full md:w-auto">
-                <img
-                  src={workout.image}
-                  alt={workout.name}
-                  className="w-24 h-16 object-cover rounded-xl"
-                />
+          {sortedWorkouts.map((workout, index) => {
+            const isCompleted = completedWorkouts.some(
+              (item) => String(item) === String(workout.id)
+            );
 
-                <div>
-                  <h4 className="text-lg font-black uppercase text-white">
-                    {workout.name}
-                  </h4>
+            return (
+              <div
+                key={`${workout.id}-${index}`}
+                className="bg-[#16181d] border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                  <img
+                    src={workout.image}
+                    alt={workout.name}
+                    className="w-24 h-16 object-cover rounded-xl"
+                  />
 
-                  <p className="text-xs text-zinc-400 font-medium">
-                    {workout.equipment}
-                  </p>
+                  <div>
+                    <h4 className="text-lg font-black uppercase text-white">
+                      {workout.name}
+                    </h4>
 
-                  <div className="flex items-center gap-4 text-xs text-zinc-300 mt-2 font-semibold">
-                    <span>{workout.duration} min</span>
+                    <p className="text-xs text-zinc-400 font-medium">
+                      {workout.equipment}
+                    </p>
 
-                    <span>{workout.caloriesBurned} kcal</span>
+                    <div className="flex items-center gap-4 text-xs text-zinc-300 mt-2 font-semibold">
+                      <span>{workout.duration} min</span>
 
-                    <span>⭐ {workout.rating}</span>
+                      <span>{workout.caloriesBurned} kcal</span>
+
+                      <span>⭐ {workout.rating}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                <Link
-                  href={`/workouts/${workout.id}`}
-                  className="border border-zinc-700 text-zinc-300 hover:text-white px-4 py-2 rounded-full text-xs font-bold transition"
-                >
-                  View Details
-                </Link>
+                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                  <Link
+                    href={`/workouts/${workout.id}`}
+                    className="border border-zinc-700 text-zinc-300 hover:text-white px-4 py-2 rounded-full text-xs font-bold transition"
+                  >
+                    View Details
+                  </Link>
 
-                {activeTab === "plan" && (
-                  <button className="bg-[#ccff00] text-black px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5">
-                    ✓ Mark as Done
+                  {activeTab === "plan" && (
+                    <button
+                      onClick={() => handleMarkAsDone(workout.id)}
+                      className="bg-[#ccff00] text-black px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5"
+                    >
+                      ✓ {isCompleted ? "Marked as Done" : "Mark as Done"}
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handleRemove(workout.id)}
+                    className="text-zinc-500 hover:text-red-400 p-2 font-bold text-lg transition"
+                  >
+                    ✕
                   </button>
-                )}
-
-                <button
-                  onClick={() => handleRemove(workout.id)}
-                  className="text-zinc-500 hover:text-red-400 p-2 font-bold text-lg transition"
-                >
-                  ✕
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

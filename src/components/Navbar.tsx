@@ -94,13 +94,13 @@ export default function Navbar() {
           </ul>
         </div>
         <div className="navbar-end gap-3">
-          <Link href="/my-plan" className="btn btn-sm bg-zinc-900 border border-zinc-700 text-white hover:bg-zinc-800 rounded-full px-4 flex items-center gap-2">
+          <Link href="/my-plan?tab=plan" className="btn btn-sm bg-zinc-900 border border-zinc-700 text-white hover:bg-zinc-800 rounded-full px-4 flex items-center gap-2">
             <span>Plan</span>
             <span className="text-[#ccff00] font-bold text-xs bg-zinc-800 px-2 py-0.5 rounded-full">
               {planCount}
             </span>
           </Link>
-          <Link href="/my-plan" className="btn btn-sm bg-zinc-900 border border-zinc-700 text-white hover:bg-zinc-800 rounded-full px-4 flex items-center gap-2">
+          <Link href="/my-plan?tab=saved" className="btn btn-sm bg-zinc-900 border border-zinc-700 text-white hover:bg-zinc-800 rounded-full px-4 flex items-center gap-2">
             <span>Saved</span>
             <span className="text-[#ccff00] font-bold text-xs bg-zinc-800 px-2 py-0.5 rounded-full">
               {savedCount}
