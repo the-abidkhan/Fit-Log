@@ -1,13 +1,16 @@
+"use client";
 
-import MyPlan from '@/components/MyPlan';
+import dynamic from 'next/dynamic';
 import React from 'react';
 
-const page = () => {
-    return (
-        <div>
-            <MyPlan></MyPlan>
-        </div>
-    );
+const MyPlan = dynamic(() => import('@/components/MyPlan'), { ssr: false });
+
+const Page = () => {
+  return (
+    <div>
+      <MyPlan />
+    </div>
+  );
 };
 
-export default page;
+export default Page;

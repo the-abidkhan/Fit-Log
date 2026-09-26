@@ -2,21 +2,11 @@ import Banner from '@/components/Banner';
 import WorkoutLibrary from '@/components/WorkoutLibrary';
 import React from 'react';
 
-async function getWorkouts() {
-  const res = await fetch('https://api.abcz.workers.dev/api/fitlog');
-  const data = await res.json();
-  return data;
-}
-
-const page = async () => {
-  const workouts = await getWorkouts();
-
+export default function Page() {
   return (
     <div className="min-h-screen bg-[#111111] text-white pt-8 pb-12 px-6 md:px-12">
       <Banner />
-      <WorkoutLibrary workouts={workouts} />
+      <WorkoutLibrary />
     </div>
   );
-};
-
-export default page;
+}
